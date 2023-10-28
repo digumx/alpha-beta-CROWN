@@ -43,5 +43,11 @@ def model_from_file( fname ):
     print( "Model output on 0s: ", 
             model( torch.zeros( ( layer_sizes[0], ), dtype=torch.float32 )))
 
+    # DEBUG
+    for i,l in enumerate( linear_list ):
+        print("Layer: ", i)
+        print("weight: ", l.weight.data)
+        print("bias: ", l.bias.data)
+
     return model
 
