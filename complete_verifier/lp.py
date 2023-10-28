@@ -1284,11 +1284,11 @@ def _intermediate_PGD_attack(m, relu_idx, restarts=3, attack_iters=50, alpha=Non
         alpha = (ub - lb).max() / 10.
 
     # print(forward_value[0, 10])
-    max_values = -torch.ones(layer_size).cpu() * 1e8
-    min_values = torch.ones(layer_size).cpu() * 1e8
-    best_delta = torch.zeros_like(X).cpu()
+    max_values = -torch.ones(layer_size).cuda() * 1e8
+    min_values = torch.ones(layer_size).cuda() * 1e8
+    best_delta = torch.zeros_like(X).cuda()
     for zz in range(restarts):
-        delta = torch.zeros_like(X).cpu()
+        delta = torch.zeros_like(X).cuda()
         delta.uniform_(0,1)
         delta = delta * (ub - lb) + lb
         delta = (delta - X).detach()
@@ -1301,8 +1301,8 @@ def _intermediate_PGD_attack(m, relu_idx, restarts=3, attack_iters=50, alpha=Non
                 forward_value = m.net.relus[relu_idx].inputs[0].forward_value
             else:
                 forward_value = m.net.final_node().forward_value.mm(m.c[0].T)
-            maxv = forward_value[:layer_size].masked_select(torch.eye(layer_size).bool().cpu())
-            minv = forward_value[layer_size:].masked_select(torch.eye(layer_size).bool().cpu())
+            maxv = forward_value[:layer_size].masked_select(torch.eye(layer_size).bool().cuda())
+            minv = forward_value[layer_size:].masked_select(torch.eye(layer_size).bool().cuda())
             # print(maxv[218], minv[218])
             # print(zz, maxv[1], minv[1])
             loss = maxv.sum() - minv.sum()
@@ -1315,8 +1315,8 @@ def _intermediate_PGD_attack(m, relu_idx, restarts=3, attack_iters=50, alpha=Non
             forward_value = m.net.relus[relu_idx].inputs[0].forward_value
         else:
             forward_value = m.net.final_node().forward_value.mm(m.c[0].T)
-        maxv = forward_value[:layer_size].masked_select(torch.eye(layer_size).bool().cpu())
-        minv = forward_value[layer_size:].masked_select(torch.eye(layer_size).bool().cpu())
+        maxv = forward_value[:layer_size].masked_select(torch.eye(layer_size).bool().cuda())
+        minv = forward_value[layer_size:].masked_select(torch.eye(layer_size).bool().cuda())
         max_idx = (maxv >= max_values)
         min_idx = (minv <= min_values)
         best_delta[:layer_size][max_idx] = delta.detach()[:layer_size][max_idx]

@@ -1290,6 +1290,7 @@ class LiRPAConvNet:
 
     @staticmethod
     def prune_lA(lA, keep_condition):
+        print("lA",lA,keep_condition)
         return [lAitem[:, keep_condition] for lAitem in lA]
 
     def build_the_model_with_refined_bounds(self, input_domain, x, refined_lower_bounds, refined_upper_bounds,

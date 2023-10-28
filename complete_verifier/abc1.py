@@ -372,7 +372,6 @@ def complete_verifier(
                 assert len(np.unique(y)) == 1 and len(rhs.unique()) == 1
             else:
                 init_verified_cond, init_failure_idx, y = torch.tensor([1]), np.array(0), np.array(0)
-                print("init_verified_cond",~init_verified_cond)
 
             if reference_slopes is not None:
                 LiRPAConvNet.prune_reference_slopes(reference_slopes, ~init_verified_cond, model_incomplete.net.final_node().name)
@@ -424,7 +423,6 @@ def main():
     random.seed(arguments.Config["general"]["seed"])
     np.random.seed(arguments.Config["general"]["seed"])
     torch.set_printoptions(precision=8)
-    arguments.Config["general"]["device"] = 'cpu'
     device = arguments.Config["general"]["device"]
     if device != 'cpu':
         torch.cuda.manual_seed_all(arguments.Config["general"]["seed"])
@@ -464,7 +462,7 @@ def main():
 
         start_time = time.time()
         print(f'\n %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% idx: {new_idx}, vnnlib ID: {vnnlib_id} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
-
+        print("RUNNNMODE",run_mode)
         if run_mode != 'customized_data':
             if len(csv_item) == 3:
                 # model, vnnlib, timeout
@@ -503,21 +501,16 @@ def main():
             vnnlib_shape = shape
 
             # FIXME attack and initial_incomplete_verification only works for assert len(vnnlib) == 1
-            print("vnnlib",vnnlib)
-
             x_range = torch.tensor(vnnlib[0][0], dtype=torch.get_default_dtype())
-            print("x_range",x_range)
             data_min = x_range.select(-1, 0).reshape(vnnlib_shape)
             data_max = x_range.select(-1, 1).reshape(vnnlib_shape)
-            x = x_range.mean(-1).reshape(vnnlib_shape) 
-            print("x,data_max,data_min",x,data_max,data_min) # only the shape of x is important.
+            x = x_range.mean(-1).reshape(vnnlib_shape)  # only the shape of x is important.
 
             # auto tune args
             update_parameters(model_ori, data_min, data_max)
 
             model_ori = model_ori.to(device)
             x, data_max, data_min = x.to(device), data_max.to(device), data_min.to(device)
-            print("x,data_max,data_min",x,data_max,data_min)
 
             verified_status = "unknown"
             verified_success = False                

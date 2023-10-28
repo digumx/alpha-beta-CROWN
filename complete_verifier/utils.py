@@ -286,6 +286,7 @@ def load_model_onnx(path, compute_test_acc=False, quirks=None, input_shape=None)
         input_initializer = [node.name for node in onnx_model.graph.initializer]
         net_feed_input = list(set(input_all) - set(input_initializer))
         net_feed_input = [node for node in onnx_model.graph.input if node.name in net_feed_input]
+        print("net_feed_input",net_feed_input[0])
 
         if len(net_feed_input) != 1:
             # in some rare case, we use the following way to find input shape but this is not always true (collins-rul-cnn)
@@ -293,26 +294,37 @@ def load_model_onnx(path, compute_test_acc=False, quirks=None, input_shape=None)
 
         onnx_input_dims = net_feed_input[0].type.tensor_type.shape.dim
         onnx_shape = tuple(d.dim_value for d in onnx_input_dims[1:])
+        print("onnx_input_dims", onnx_input_dims[0])
+        for d in onnx_input_dims[1:]:
+            print("here",d)
+        print("onnx_input_dims,onnx_shape",onnx_input_dims,onnx_shape)
+
     else:
         # User specify input_shape
         onnx_shape = arguments.Config["model"]["input_shape"][1:]
+        print("onnx_shape",onnx_shape)
 
+    #onnx_shape = (5,)
     pytorch_model = onnx2pytorch.ConvertModel(onnx_model, experimental=True, quirks=quirks)
     pytorch_model.eval()
     pytorch_model.to(dtype=torch.get_default_dtype())
-    # print(pytorch_model)
+    print(pytorch_model)
 
     conversion_check_result = True
     try:
         # check conversion correctness
         # FIXME dtype of dummy may not match the onnx model, which can cause runtime error
+        print("HEREEE!!!")
         dummy = torch.randn([1, *onnx_shape])
         output_pytorch = pytorch_model(dummy).numpy()
+        print("dumpy",dummy.numpy())
         output_onnx = inference_onnx(path, dummy.numpy())[0]
         if "remove_relu_in_last_layer" in onnx_optimization_flags:
             output_pytorch = output_pytorch.clip(min=0)
+        print("output_onnx", output_onnx)
         conversion_check_result = np.allclose(
             output_pytorch, output_onnx, 1e-4, 1e-5)
+        
     except:
         warnings.warn(f'Not able to check model\'s conversion correctness')
         print('\n*************Error traceback*************')
@@ -329,6 +341,7 @@ def load_model_onnx(path, compute_test_acc=False, quirks=None, input_shape=None)
     if arguments.Config["model"]["cache_onnx_conversion"]:
         torch.save((pytorch_model, onnx_shape), path_cache)
 
+    print(pytorch_model)
     return pytorch_model, onnx_shape
 
 
@@ -661,11 +674,13 @@ def load_eran_dataset(eps_temp=None):
     return X, labels, data_max, data_min, eps_temp, runnerup
 
 
-def Customized(def_file, callable_name, *args, **kwargs):
+def Customized(j, callable_name, *args, **kwargs):
     """Fully customized model or dataloader."""
     if def_file.endswith('.py'):
         spec = importlib.util.spec_from_file_location("customized", def_file)
+        print("SPEC",spec)
         module = importlib.util.module_from_spec(spec)
+        print("MODULE",module)
         spec.loader.exec_module(module)
     else:
         module = importlib.import_module(def_file)

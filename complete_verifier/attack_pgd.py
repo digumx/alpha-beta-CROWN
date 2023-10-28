@@ -394,6 +394,7 @@ def gen_adv_example(model_ori, x, best_deltas, data_max, data_min, C_mat, rhs_ma
     print("PGD attack margin (first 2 examles and 10 specs):\n", attack_margin[:2, :, :10])
     print("number of violation: ", (attack_margin < 0).sum().item())
     # print the first 10 specifications for the first 2 examples 
+    print("attack_image, attack_output, attack_margin",attack_image, attack_output, attack_margin)
 
     return attack_image, attack_output, attack_margin
 
@@ -1098,7 +1099,7 @@ def attack_with_general_specs(model, x, data_min, data_max, list_target_label_ar
     for p in model.parameters():
         grad_status[p] = p.requires_grad
         p.requires_grad_(False)
-
+    print("XXX",x)
     output = model(x).detach()
     print('Model output of first 5 examples:\n', output[:5])
     
