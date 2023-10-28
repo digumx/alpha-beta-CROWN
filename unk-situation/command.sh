@@ -1,0 +1,1 @@
+python complete_verifier/abcrown.py --model 'Customized("abs_net_loader", "model_from_file", fname="unk-situation/tst.npz")' --input_shape 1 5 --save_adv_example --cex_path cex.txt --vnnlib_path unk-situation/new_vnnlib.vnnlib --no_incomplete

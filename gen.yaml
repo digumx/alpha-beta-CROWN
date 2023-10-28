@@ -6,7 +6,7 @@
 #                  --input_shape -1 3 32 32
 model:
   # Use the two_relu_toy_model() model in "custom_model_data.py".
-  name: Customized("custom_model_data", "acasxu_model", in_dim=5, out_dim=2)  # This model is defined in model_defs.py. Add your own model definitions there.
+  name: Customized("./model_def_2.py", "acasxu_model", in_dim=5, out_dim=2)  # This model is defined in model_defs.py. Add your own model definitions there.
   #path: models/cifar10_resnet/resnet2b.pth  # Path to PyTorch checkpoint.
 data:
   # Use the simple_box_data() loader in "custom_model_data.py".
