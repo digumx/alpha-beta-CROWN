@@ -7,6 +7,13 @@ def model_from_file( fname ):
     A custom loader for loading the abstract network as defined in semantic
     neuron merge. Refer to semantic neuron merge, network.py:Network.save for
     the spec for the npz file format
+
+    npz file should have items:
+
+    layer_sizes -   An array of layer sizes including input and output layer
+    weight_i    -   Weight connected to output of layer i
+    biase_i     -   Bias connected to output of layer i
+    end_relu    -   A boolean value, if true, network ends with ReLU
     """
     # Load data from file
     data = np.load( fname )
@@ -47,7 +54,9 @@ def model_from_file( fname ):
     for i,l in enumerate( linear_list ):
         print("Layer: ", i)
         print("weight: ", l.weight.data)
+        print("weight dtype: ", l.weight.data.dtype)
         print("bias: ", l.bias.data)
+        print("bias dtype: ", l.bias.data.dtype)
 
     return model
 
