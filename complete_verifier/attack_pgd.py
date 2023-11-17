@@ -275,7 +275,13 @@ def test_conditions(input, output, C_mat, rhs_mat, cond_mat, same_number_const, 
 
         print("C_mat", C_mat)   #DEBUG
         print("output", output)   #DEBUG
+        print("input", input)
+        print("Shape of input", input.shape)
+
         cond = torch.matmul(C_mat, output.unsqueeze(-1)).squeeze(-1) - rhs_mat
+
+        print("Cond after matrix mult: ", cond)
+        print("Cond amax: ", cond.amax(dim=-1, keepdim=True))
 
         valid = ((input <= data_max) & (input >= data_min))
 
@@ -284,7 +290,27 @@ def test_conditions(input, output, C_mat, rhs_mat, cond_mat, same_number_const, 
         valid = valid.all(-1).view(valid.shape[0], valid.shape[1], len(cond_mat[0]), -1)
         # [num_example, restarts, num_or_spec, num_and_spec]
         
-        res = ((cond.amax(dim=-1, keepdim=True) < 0.0) & valid).any(dim=-1).any(dim=-1).any(dim=-1)    
+        print("Valid after all reshapes", valid)
+
+        print("Is prop true anywhere", ((cond.amax(dim=-1, keepdim=True) < 0.0) & valid))
+
+        print("Shape of cond after amax: ", cond.amax(dim=-1, keepdim=True).shape)
+        print("Shape of valid: ", valid.shape)
+
+        pre_res = ((cond.amax(dim=-1, keepdim=True) < 0.0) & valid)
+
+        print("Shape of pre_res: ", pre_res.shape)
+
+        res = pre_res.any(dim=-1).any(dim=-1).any(dim=-1)    
+
+        # Extract input where prop holds
+        if res:
+            idx = torch.nonzero( pre_res )[0][:3]
+            print("idx:", idx)
+            print("Shape of input", input.shape )
+            cex_hopefully = input[ idx[0], idx[1], idx[2], : ]
+            print( "====CEX====", cex_hopefully )
+        
     else:
         output = output.repeat_interleave(torch.tensor(cond_mat[0]).to(output.device), dim=2)
         # [num_example, num_restarts, num_spec, num_output]
@@ -323,6 +349,7 @@ def test_conditions(input, output, C_mat, rhs_mat, cond_mat, same_number_const, 
         # [num_example, num_restarts, num_or_example]
         res = ((cond == 0.0) & valid).any(dim=-1).any(dim=-1)
 
+    print("Return from test_conditions", res)
     return res
 
 
