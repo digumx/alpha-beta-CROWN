@@ -15,6 +15,8 @@ from torch.optim import Optimizer
 import arguments
 import torch.nn as nn
 
+import dump_counterexample
+
 torch._C._jit_set_profiling_executor(False)
 torch._C._jit_set_profiling_mode(False)
 
@@ -310,6 +312,7 @@ def test_conditions(input, output, C_mat, rhs_mat, cond_mat, same_number_const, 
             print("Shape of input", input.shape )
             cex_hopefully = input[ idx[0], idx[1], idx[2], : ]
             print( "====CEX====", cex_hopefully )
+            dump_counterexample.dump_cex_to_file( 'cex.txt', cex_hopefully )
         
     else:
         output = output.repeat_interleave(torch.tensor(cond_mat[0]).to(output.device), dim=2)
