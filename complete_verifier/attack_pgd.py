@@ -306,7 +306,7 @@ def test_conditions(input, output, C_mat, rhs_mat, cond_mat, same_number_const, 
         res = pre_res.any(dim=-1).any(dim=-1).any(dim=-1)    
 
         # Extract input where prop holds
-        if res:
+        if res.any():
             idx = torch.nonzero( pre_res )[0][:3]
             print("idx:", idx)
             print("Shape of input", input.shape )
