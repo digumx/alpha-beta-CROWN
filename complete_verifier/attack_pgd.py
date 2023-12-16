@@ -281,12 +281,17 @@ def test_conditions(input, output, C_mat, rhs_mat, cond_mat, same_number_const, 
         print("Shape of input", input.shape)
 
         cond = torch.matmul(C_mat, output.unsqueeze(-1)).squeeze(-1) - rhs_mat
-
+        #assume last dimension of input represent one cex
+        #data min has to be [1,1,1,.., input.shape[-1]]
+        assert(input.shape[-1]==data_min.shape[-1])
         print("Cond after matrix mult: ", cond)
         print("Cond amax: ", cond.amax(dim=-1, keepdim=True))
-
+        print("data_max",data_max.shape)
+        #Assume all the dimensions in data_max are 1. Therefore broadcasting is just adding extra 1's to shape of input.
+        for s in data_max.shape[:-1]:
+            assert(s==1)
         valid = ((input <= data_max) & (input >= data_min))
-
+        print("Valid before reshape", valid)
         valid = valid.view(*valid.shape[:3], -1)
         # [num_example, restarts, num_all_spec, output_dim]
         valid = valid.all(-1).view(valid.shape[0], valid.shape[1], len(cond_mat[0]), -1)
@@ -310,7 +315,10 @@ def test_conditions(input, output, C_mat, rhs_mat, cond_mat, same_number_const, 
             idx = torch.nonzero( pre_res )[0][:3]
             print("idx:", idx)
             print("Shape of input", input.shape )
-            cex_hopefully = input[ idx[0], idx[1], idx[2], : ]
+            print("Input", input)
+            #Mimicing broadcasting to extend input shape by 1's
+            input_expanded = input.expand(*pre_res.shape,-1)
+            cex_hopefully = input_expanded[ idx[0], idx[1], idx[2], : ]
             print( "====CEX====", cex_hopefully )
             dump_counterexample.dump_cex_to_file( 'cex.txt', cex_hopefully )
         
