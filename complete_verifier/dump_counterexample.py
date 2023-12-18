@@ -2,10 +2,12 @@
 Some code written by Sanaa to dump out cex
 """
 import torch
+import os
 
 
 def dump_cex_to_file(file_name, cex):
     try:
+        os.system("rm /home/testing/oct22/semantic-neuron-merge/cex.txt")
         with open(file_name, 'w') as file:
             for i, cex_i in enumerate(cex):
                 if i == 0:

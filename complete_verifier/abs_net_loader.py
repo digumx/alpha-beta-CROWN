@@ -46,9 +46,9 @@ def model_from_file( fname ):
         l.bias.data = torch.from_numpy( data[ 'bias_{}'.format(i) ])
 
     # DEBUG
-    print( "Model :", model )
-    print( "Model output on 0s: ", 
-            model( torch.zeros( ( layer_sizes[0], ), dtype=torch.float32 )))
+    #print( "Model :", model )
+    #print( "Model output on 0s: ", 
+    #        model( torch.zeros( ( layer_sizes[0], ), dtype=torch.float32 )))
 
     # DEBUG
     for i,l in enumerate( linear_list ):

@@ -503,21 +503,25 @@ def main():
             vnnlib_shape = shape
 
             # FIXME attack and initial_incomplete_verification only works for assert len(vnnlib) == 1
-            print("vnnlib",vnnlib)
+            #DEBUG
+            #print("vnnlib",vnnlib)
 
             x_range = torch.tensor(vnnlib[0][0], dtype=torch.get_default_dtype())
-            print("x_range",x_range)
+            #DEBUG
+            #print("x_range",x_range)
             data_min = x_range.select(-1, 0).reshape(vnnlib_shape)
             data_max = x_range.select(-1, 1).reshape(vnnlib_shape)
             x = x_range.mean(-1).reshape(vnnlib_shape) 
-            print("x,data_max,data_min",x,data_max,data_min) # only the shape of x is important.
+            #DEBUG
+            #print("x,data_max,data_min",x,data_max,data_min) # only the shape of x is important.
 
             # auto tune args
             update_parameters(model_ori, data_min, data_max)
 
             model_ori = model_ori.to(device)
             x, data_max, data_min = x.to(device), data_max.to(device), data_min.to(device)
-            print("x,data_max,data_min",x,data_max,data_min)
+            #DEBUG
+            #print("x,data_max,data_min",x,data_max,data_min)
 
             verified_status = "unknown"
             verified_success = False                
