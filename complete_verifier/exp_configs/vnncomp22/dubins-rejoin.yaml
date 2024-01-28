@@ -6,6 +6,7 @@ general:
   loss_reduction_func: max
   conv_mode: matrix
 data:
+  dataset: Dubinsrejoin
   num_outputs: 8
   start: 200
   end: 300
@@ -21,4 +22,4 @@ bab:
     input_split:
       enable: True
 attack:
-  pgd_order: input_bab
+  pgd_order: skip

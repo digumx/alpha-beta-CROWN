@@ -12,6 +12,7 @@
 ##        contained in the LICENCE file in this directory.             ##
 ##                                                                     ##
 #########################################################################
+import copy
 import time
 import os
 
