@@ -17,3 +17,5 @@ verifier_log_*
 .idea
 *.so
 release
+stats/*
+outs/*
