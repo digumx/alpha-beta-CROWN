@@ -1,0 +1,3 @@
+[submodule "auto_LiRPA"]
+	path = auto_LiRPA
+	url = ../auto_LiRPA.git
