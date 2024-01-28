@@ -151,11 +151,29 @@ class ABCROWN:
                 for node in model.net.optimizable_activations
             }
 
-        if c_transposed:
-            ret['lower_bounds'][model.final_name] = ret['lower_bounds'][model.final_name].t()
-            ret['upper_bounds'][model.final_name] = ret['upper_bounds'][model.final_name].t()
-            if ret['lA'] is not None:
-                ret['lA'] = {k: v.transpose(0, 1) for k, v in ret['lA'].items()}
+        # Complete verification (BaB, BaB with refine, or MIP).
+        if arguments.Config["general"]["enable_incomplete_verification"]:
+            assert not arguments.Config["bab"]["branching"]["input_split"]["enable"]
+            # Reuse results from incomplete results, or from refined MIPs.
+            # skip the prop that already verified
+            rlb = list(lower_bounds)[-1]
+            if arguments.Config["data"]["num_outputs"] != 1:
+                init_verified_cond = rlb.flatten() > rhs.flatten()
+                init_verified_idx = np.array(torch.where(init_verified_cond)[0].cpu())
+                if init_verified_idx.size > 0:
+                    print(f"Initial alpha-CROWN verified for spec index {init_verified_idx} with bound {rlb[init_verified_idx].squeeze()}.")
+                    l, ret = init_global_lb[init_verified_idx].cpu().numpy().tolist(), 'safe'
+                    bab_ret.append([index, l, 0, time.time() - start_time_bab, pidx])
+                init_failure_idx = np.array(torch.where(~init_verified_cond)[0].cpu())
+                if init_failure_idx.size == 0:
+                    # This batch of x verified by init opt crown
+                    continue
+                print(f"Remaining spec index {init_failure_idx} with "
+                      f"bounds {rlb[init_failure_idx]} need to verify.")
+                assert len(np.unique(y)) == 1 and len(rhs.unique()) == 1
+            else:
+                init_verified_cond, init_failure_idx, y = torch.tensor([1]), np.array(0), np.array(0)
+                print("init_verified_cond",~init_verified_cond)
 
         ret.update({'model': model, 'global_lb': global_lb, 'alpha': saved_alphas})
 
@@ -230,21 +248,19 @@ class ABCROWN:
         else:
             x = BoundedTensor(data_lb, ptb).to(data_lb.device)
 
-        self.domain = torch.stack([data_lb.squeeze(0), data_ub.squeeze(0)], dim=-1)
-        if arguments.Config['bab']['branching']['input_split']['enable']:
-            result = input_bab_parallel(
-                self.model, self.domain, x, rhs=rhs, timeout=timeout,
-                vnnlib=vnnlib, c_transposed=c_transposed,
-                return_domains=return_domains)
-        else:
-            assert not return_domains
-            result = general_bab(
-                self.model, self.domain, x,
-                refined_lower_bounds=lower_bounds, refined_upper_bounds=upper_bounds,
-                activation_opt_params=activation_opt_params, reference_lA=reference_lA,
-                reference_alphas=reference_alphas, attack_images=attack_images,
-                timeout=timeout, refined_betas=refined_betas, rhs=rhs,
-                model_incomplete=model_incomplete, time_stamp=time_stamp)
+def main():
+    print(f'Experiments at {time.ctime()} on {socket.gethostname()}')
+    torch.manual_seed(arguments.Config["general"]["seed"])
+    random.seed(arguments.Config["general"]["seed"])
+    np.random.seed(arguments.Config["general"]["seed"])
+    torch.set_printoptions(precision=8)
+    arguments.Config["general"]["device"] = 'cpu'
+    device = arguments.Config["general"]["device"]
+    if device != 'cpu':
+        torch.cuda.manual_seed_all(arguments.Config["general"]["seed"])
+        # Always disable TF32 (precision is too low for verification).
+        torch.backends.cuda.matmul.allow_tf32 = False
+        torch.backends.cudnn.allow_tf32 = False
 
         min_lb = result[0]
         if min_lb is None:
@@ -518,22 +534,26 @@ class ABCROWN:
             model_ori.eval()
             vnnlib_shape = shape
 
-            # FIXME attack and initial_incomplete_verification only works for
-            # assert len(vnnlib) == 1
-            if isinstance(vnnlib[0][0], dict):
-                x = vnnlib[0][0]['X'].reshape(vnnlib_shape)
-                data_min = vnnlib[0][0]['data_min'].reshape(vnnlib_shape)
-                data_max = vnnlib[0][0]['data_max'].reshape(vnnlib_shape)
-            else:
-                x_range = torch.tensor(vnnlib[0][0])
-                data_min = x_range.select(-1, 0).reshape(vnnlib_shape)
-                data_max = x_range.select(-1, 1).reshape(vnnlib_shape)
-                x = x_range.mean(-1).reshape(vnnlib_shape)  # only the shape of x is important.
-            adhoc_tuning(data_min, data_max, model_ori)
+            # FIXME attack and initial_incomplete_verification only works for assert len(vnnlib) == 1
+            #DEBUG
+            #print("vnnlib",vnnlib)
+
+            x_range = torch.tensor(vnnlib[0][0], dtype=torch.get_default_dtype())
+            #DEBUG
+            #print("x_range",x_range)
+            data_min = x_range.select(-1, 0).reshape(vnnlib_shape)
+            data_max = x_range.select(-1, 1).reshape(vnnlib_shape)
+            x = x_range.mean(-1).reshape(vnnlib_shape) 
+            #DEBUG
+            #print("x,data_max,data_min",x,data_max,data_min) # only the shape of x is important.
+
+            # auto tune args
+            update_parameters(model_ori, data_min, data_max)
 
             model_ori = model_ori.to(device)
             x, data_max, data_min = x.to(device), data_max.to(device), data_min.to(device)
-            verified_status, verified_success = 'unknown', False
+            #DEBUG
+            #print("x,data_max,data_min",x,data_max,data_min)
 
             if arguments.Config['attack']['pgd_order'] == 'before':
                 verified_status, verified_success, _, attack_margins, all_adv_candidates = attack(

@@ -16,8 +16,6 @@ verifier_log_*
 .idea
 *.so
 release
-*.compiled
-.DS_Store
-*.csv
-*.out
-*.txt
+stats/*
+outs/*
+Verified_ret_*.npy

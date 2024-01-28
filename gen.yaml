@@ -1,0 +1,19 @@
+# Example of verification of a Pytorch model with general VNNLIB specification.
+#
+# python abcrown.py --load_model models/cifar10_resnet/resnet2b.pth \
+#                  --model resnet2b \
+#                  --vnnlib_path ../../vnncomp2021/benchmarks/cifar2020/specs/cifar10/cifar10_spec_idx_0_eps_0.00784_n1.vnnlib \
+#                  --input_shape -1 3 32 32
+model:
+  # Use the two_relu_toy_model() model in "custom_model_data.py".
+  name: Customized("abs_net_loader", "model_from_file", fname="unk-situation/tst.npz")  # This model is defined in model_defs.py. Add your own model definitions there.
+  #path: models/cifar10_resnet/resnet2b.pth  # Path to PyTorch checkpoint.
+  #data:
+  #  # Use the simple_box_data() loader in "custom_model_data.py".
+  #  # dataset: Customized("custom_model_data", "simple_box_data1")
+  #  num_outputs: 1
+specification:
+  # VNNLIB file specification.
+  vnnlib_path: new_vnnlib.vnnlib
+solver:
+  batch_size: 2048  # Number of subdomains to compute in parallel in bound solver. Decrease if you run out of memory.

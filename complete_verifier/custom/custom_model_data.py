@@ -57,7 +57,58 @@ def two_relu_toy_model(in_dim=2, out_dim=2):
     return model
 
 
-def simple_box_data(spec):
+def acasxu_model(in_dim=5, out_dim=2):
+    """A very simple model, 2 inputs, 2 ReLUs, 2 outputs"""
+    #[5, 2, 2, 2, 2, 2, 2, 1, 1]
+    model = nn.Sequential(
+        nn.Linear(in_dim, 2),
+        nn.ReLU(),
+        nn.Linear(2,2),
+        nn.ReLU(),
+        nn.Linear(2,2),
+        nn.ReLU(),
+        nn.Linear(2,2),
+        nn.ReLU(),
+        nn.Linear(2,2),
+        nn.ReLU(),
+        nn.Linear(2,2),
+        nn.ReLU(),
+        nn.Linear(2,2),
+        # nn.ReLU(),
+        # nn.Linear(1, out_dim)
+    )
+    """[relu(x+2y)-relu(2x+y)+2, 0*relu(2x-y)+0*relu(-x+y)]"""
+    model[0].weight.data = torch.tensor([[ 0.988522, -1.26873 ],
+       [ 1.50971 , -1.71126 ],
+       [ 1.64328 , -1.65985 ],
+       [ 0.559322, -1.41497 ],
+       [ 1.00533 , -1.74688 ]]).T
+    model[0].bias.data = torch.tensor([ 0.387475, -0.596942])
+    model[2].weight.data = torch.tensor([[  75.9060595, -130.5956639],
+       [   0.       ,    0.       ]]).T
+    model[2].bias.data = torch.tensor([ 0.743415, -0.89279 ])
+    model[4].weight.data = torch.tensor([[ 63.1597248, -89.8791989],
+       [  0.       ,   0.       ]]).T
+    model[4].bias.data = torch.tensor([ 1.885  , -2.37547])
+    model[6].weight.data = torch.tensor([[  83.3310628, -121.9018252],
+       [   0.       ,    0.       ]]).T
+    model[6].bias.data = torch.tensor([ 4.44188, -2.17148])
+    model[8].weight.data = torch.tensor([[ 137.0235745, -183.9342151],
+       [   0.       ,    0.       ]]).T
+    model[8].bias.data = torch.tensor([ 2.99448, -4.32663])
+    model[10].weight.data = torch.tensor([[ 133.881491 , -314.3465339],
+       [   0.       ,    0.       ]]).T
+    model[10].bias.data = torch.tensor([ 2.32671, -3.16415])
+    model[12].weight.data = torch.tensor([[-2.26224408,0],
+       [ 0.03415425,0]]).T
+    model[12].bias.data = torch.tensor([0.,0.0051717])
+    # model[14].weight.data = torch.tensor([[-4.]]).T
+    # model[14].bias.data = torch.tensor([0.])   
+
+    return model
+
+
+def simple_box_data(eps=2.):
     """a customized box data: x=[-1, 1], y=[-1, 1]"""
     eps = spec["epsilon"]
     if eps is None:
@@ -67,6 +118,17 @@ def simple_box_data(spec):
     eps_temp = torch.tensor(eps).reshape(1, -1)
     data_max = torch.tensor(10.).reshape(1, -1)
     data_min = torch.tensor(-10.).reshape(1, -1)
+    print("X, labels, data_max, data_min, eps_temp HERE!!!!",X, labels, data_max, data_min, eps_temp)
+    return X, labels, data_max, data_min, eps_temp
+
+def simple_box_data1(eps=5.):
+    """a customized box data: x=[-1, 1], y=[-1, 1]"""
+    X = torch.tensor([[0., 0.,0., 0.,0.]]).float()
+    labels = torch.tensor([0]).long()
+    eps_temp = torch.tensor(eps).reshape(1, -1)
+    data_max = torch.tensor(10.).reshape(1, -1)
+    data_min = torch.tensor(-10.).reshape(1, -1)
+    print("X, labels, data_max, data_min, eps_temp HERE!!!!",X, labels, data_max, data_min, eps_temp)
     return X, labels, data_max, data_min, eps_temp
 
 

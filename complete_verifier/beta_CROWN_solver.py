@@ -579,9 +579,87 @@ class LiRPANet:
         })
         return lb[self.final_name], result
 
-    def build_with_refined_bounds(
-            self, input_domain, x,
-            refined_lower_bounds=None, refined_upper_bounds=None,
+    def copy_alpha(
+            self, reference_slopes, num_targets, target_batch_size=None,
+            now_batch=None, intermediate_layer_bounds=None, batch_size=None):
+        # alpha manipulation, since after init_slope all things are copied from alpha-CROWN and these alphas may have wrong shape
+        opt_intermediate_beta  = False
+        opt_interm_bounds = arguments.Config["solver"]["beta-crown"]["enable_opt_interm_bounds"]
+        for m in self.net.relus:
+            keys = list(m.alpha.keys())
+            # when fixed intermediate bounds are available, since intermediate betas are not used anymore because we use fixed intermediate bounds later, we can delete these intermediate betas to save space
+            if intermediate_layer_bounds is not None and not opt_interm_bounds and not opt_intermediate_beta:
+                for k in keys:
+                    if k != self.net.final_node().name:
+                        del m.alpha[k]
+            if (m.alpha[self.net.final_node().name].shape[1] != 1
+                    or m.alpha[self.net.final_node().name].shape[2] != batch_size):
+                # shape mismatch detected
+                # pick the first slice with shape [2, 1, 1, ...], and repeat to [2, 1, batch_size, ...]
+                repeat = [1 if i != 2 else batch_size for i in range(m.alpha[self.net.final_node().name].dim())]
+                m.alpha[self.net.final_node().name] = (
+                    m.alpha[self.net.final_node().name][:, 0:1, 0:1].repeat(*repeat))
+
+        if reference_slopes is None:
+            return False
+
+        # We already have slopes available
+        all_slope_initialized = True
+        for m in self.net.relus:
+            for spec_name, alpha in m.alpha.items():
+                def not_setting_alpha():
+                    print(f"not setting layer {m.name} start_node {spec_name} because shape mismatch ({alpha.size()} != {reference_alpha.size()})")
+                # each slope size is (2, spec, batch_size, *shape); batch size is 1.
+                if not spec_name in reference_slopes[m.name]:
+                    continue
+                reference_alpha = reference_slopes[m.name][spec_name]
+                if spec_name == self.net.final_node().name:
+                    target_start = now_batch * target_batch_size
+                    target_end = min((now_batch + 1) * target_batch_size, num_targets)
+                    if alpha.size()[2] == target_end - target_start:
+                        print(f"setting alpha for layer {m.name} start_node {spec_name} with alignment adjustment")
+                        # The reference alpha has deleted the pred class itself, while our alpha keeps that
+                        # now align these two
+                        # note: this part actually implements the following TODO (extract alpha according to different label)
+                        if reference_alpha.size()[1] > 1:
+                            # didn't apply multiple x in incomplete_verifier
+                            alpha.data = reference_alpha[:, target_start:target_end].reshape_as(alpha.data)
+                        else:
+                            # applied multiple x in incomplete_verifier
+                            alpha.data = reference_alpha[:, :, target_start:target_end].reshape_as(alpha.data)
+                    else:
+                        all_slope_initialized = False
+                        not_setting_alpha()
+                elif alpha.size() == reference_alpha.size():
+                    print(f"setting alpha for layer {m.name} start_node {spec_name}")
+                    alpha.data.copy_(reference_alpha)
+                elif all([si == sj or ((d == 2) and sj == 1) for d, (si, sj) in enumerate(zip(alpha.size(), reference_alpha.size()))]):
+                    print(f"setting alpha for layer {m.name} start_node {spec_name} with batch sample broadcasting")
+                    alpha.data.copy_(reference_alpha)
+                else:
+                    # TODO extract alpha according to different label
+                    all_slope_initialized = False
+                    not_setting_alpha()
+
+        return all_slope_initialized
+
+    @staticmethod
+    def prune_reference_slopes(reference_slopes, keep_condition, final_node_name):
+        for m, spec_dict in reference_slopes.items():
+            for spec in spec_dict:
+                if spec == final_node_name:
+                    if spec_dict[spec].size()[1] > 1:
+                        # correspond to multi-x case
+                        spec_dict[spec] = spec_dict[spec][:, keep_condition]
+                    else:
+                        spec_dict[spec] = spec_dict[spec][:, :, keep_condition]
+
+    @staticmethod
+    def prune_lA(lA, keep_condition):
+        print("lA",lA,keep_condition)
+        return [lAitem[:, keep_condition] for lAitem in lA]
+
+    def build_the_model_with_refined_bounds(self, input_domain, x, refined_lower_bounds, refined_upper_bounds,
             activation_opt_params=None, reference_lA=None,
             reference_alphas=None, cutter=None, refined_betas=None,
             stop_criterion_func=stop_criterion_placeholder(),

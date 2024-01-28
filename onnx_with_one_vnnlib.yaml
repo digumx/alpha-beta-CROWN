@@ -1,0 +1,9 @@
+# Example of verifying an ONNX model with VNNLIB general specifications
+model:
+  # Assuming you have cloned the vnncomp2021 repository: https://github.com/stanleybak/vnncomp2021
+  onnx_path: mnist_relu_9_200.onnx
+specification:
+  # VNNLIB file specification.
+  vnnlib_path: mnist-relu-9-200/prop_1_0.015.vnnlib
+solver:
+  batch_size: 2048  # Number of subdomains to compute in parallel in bound solver. Decrease if you run out of memory.
