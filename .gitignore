@@ -19,3 +19,4 @@ verifier_log_*
 release
 stats/*
 outs/*
+Verified_ret_*.npy
