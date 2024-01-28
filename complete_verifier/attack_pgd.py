@@ -262,10 +262,10 @@ def test_conditions(input, output, C_mat, rhs_mat, cond_mat, same_number_const, 
     Whether the output satisfies the specifiction conditions.
     If the output satisfies the specification for adversarial examples, this function returns True, otherwise False.
 
-    input: [num_exampele, num_restarts, num_or_spec, *input_shape]
+    input: [num_exampele, num_restarts, , *input_shape]
     output: [num_example, num_restarts, num_or_spec, num_output]
     C_mat: [num_example, num_restarts, num_spec, num_output] or [num_example, num_spec, num_output]
-    rhs_mat: [num_example, num_spec]
+    rhs_mat: [num_example, num_spec]num_or_spec
     cond_mat: [[]] * num_examples
     same_number_const (bool): if same_number_const is True, it means that there are same number of and specifications in every or specification group.
     data_max & data_min: [num_example, num_spec, *input_shape]
@@ -283,6 +283,7 @@ def test_conditions(input, output, C_mat, rhs_mat, cond_mat, same_number_const, 
         #print("input", input)
         print("Shape of input", input.shape)
         print("Shape of output", output.shape)
+        #print("input", input[2])
 
         cond = torch.matmul(C_mat, output.unsqueeze(-1)).squeeze(-1) - rhs_mat
         #assume last dimension of input represent one cex
@@ -292,8 +293,8 @@ def test_conditions(input, output, C_mat, rhs_mat, cond_mat, same_number_const, 
         #print("Cond amax: ", cond.amax(dim=-1, keepdim=True))
         print("data_max",data_max.shape)
         #Assume all the dimensions in data_max are 1. Therefore broadcasting is just adding extra 1's to shape of input.
-        for s in data_max.shape[:-1]:
-            assert(s==1)
+        # for s in data_max.shape[:-1]:
+        #     assert(s==1)
         valid = ((input <= data_max) & (input >= data_min))
         #print("Valid before reshape", valid)
         valid = valid.view(*valid.shape[:3], -1)
