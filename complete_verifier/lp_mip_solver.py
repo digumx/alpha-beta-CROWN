@@ -1031,7 +1031,8 @@ def FSB_score(net, lower_bounds, upper_bounds, orig_mask, pre_relu_indices, lAs,
     relu_idx = -1
     number_bounds = lower_bounds[-1].shape[0]
 
-    for layer in reversed(net.relus):
+    for ind, layer in reversed(list(enumerate(net.relus))):
+        print("ind, layer", ind, layer)
         ratio = lAs[relu_idx]
         this_layer_mask = mask[relu_idx].unsqueeze(1)
         ratio_temp_0, ratio_temp_1 = compute_ratio(lower_bounds[pre_relu_indices[relu_idx]],
@@ -1039,6 +1040,9 @@ def FSB_score(net, lower_bounds, upper_bounds, orig_mask, pre_relu_indices, lAs,
         # Intercept
         intercept_temp = torch.clamp(ratio, max=0)
         intercept_candidate = intercept_temp * ratio_temp_1
+        print("intercept candidate sizes", intercept_candidate.shape)
+        print("intercept_candidate.view(batch, number_bounds, -1)", intercept_candidate.view(batch, number_bounds, -1).shape)
+        print("this_layer_mask", this_layer_mask.shape)
         intercept_tb.insert(0, (intercept_candidate.view(batch, number_bounds, -1) * this_layer_mask).mean(1))
 
         # Bias
