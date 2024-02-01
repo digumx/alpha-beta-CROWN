@@ -1456,6 +1456,7 @@ def build_the_model_mip_refine(m, lower_bounds, upper_bounds,
     last_relu_layer_refined = False
     for layer in m.layers:
         this_layer_refined = False
+        is_empty_layer = False
         new_layer_gurobi_vars = []
         if type(layer) is nn.Linear:
 
@@ -1963,11 +1964,21 @@ def build_the_model_mip_refine(m, lower_bounds, upper_bounds,
                     new_layer_gurobi_vars.extend(m.gurobi_vars[-1][chan_idx][row_idx])
         elif "Identity" in str(type(layer)):
             pass
+        elif "Sub" in str(type(layer)) or "Div" in str(type(layer)) or "Constant" in str(type(layer)) or "OperatorWrapper" in str(type(layer)):
+            is_empty_layer = True
+            pass
+        elif "sub" in str(layer) or "div" in str(layer) or "Constant" in str(layer):
+            is_empty_layer = True
+            pass
         else:
-            print(layer)
+            print(f"Layer: {layer}")
+            print(f"Type: {type(layer)}")
             raise NotImplementedError
-
-        m.gurobi_vars.append(new_layer_gurobi_vars)
+        print(layer)
+        print(type(layer))
+        if not is_empty_layer:
+            m.gurobi_vars.append(new_layer_gurobi_vars)
+            is_empty_layer = False
 
         layer_idx += 1
 
