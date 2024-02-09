@@ -275,40 +275,19 @@ def test_conditions(input, output, C_mat, rhs_mat, cond_mat, same_number_const, 
         # [batch_size, restarts, num_or_spec, num_and_spec, output_dim]
         rhs_mat = rhs_mat.view(rhs_mat.shape[0], 1, len(cond_mat[0]), -1)
 
-        #DEBUG
-        print('attack_pgd.test_conditions branch same_number_const=true')
-
-        print("C_mat", C_mat)   #DEBUG
-        #print("output", output)   #DEBUG
-        #print("input", input)
-        print("Shape of input", input.shape)
-        print("Shape of output", output.shape)
-        #print("input", input[2])
-
         cond = torch.matmul(C_mat, output.unsqueeze(-1)).squeeze(-1) - rhs_mat
         #assume last dimension of input represent one cex
         #data min has to be [1,1,1,.., input.shape[-1]]
         assert(input.shape[-1]==data_min.shape[-1])
-        #print("Cond after matrix mult: ", cond)
-        #print("Cond amax: ", cond.amax(dim=-1, keepdim=True))
-        print("data_max",data_max.shape)
         #Assume all the dimensions in data_max are 1. Therefore broadcasting is just adding extra 1's to shape of input.
         # for s in data_max.shape[:-1]:
         #     assert(s==1)
         valid = ((input <= data_max) & (input >= data_min))
-        #print("Valid before reshape", valid)
         valid = valid.view(*valid.shape[:3], -1)
         # [num_example, restarts, num_all_spec, output_dim]
         valid = valid.all(-1).view(valid.shape[0], valid.shape[1], len(cond_mat[0]), -1)
         # [num_example, restarts, num_or_spec, num_and_spec]
         
-        #print("Valid after all reshapes", valid)
-
-        #print("Is prop true anywhere", ((cond.amax(dim=-1, keepdim=True) < 0.0) & valid))
-
-        print("Shape of cond after amax: ", cond.amax(dim=-1, keepdim=True).shape)
-        print("Shape of valid: ", valid.shape)
-
         pre_res = ((cond.amax(dim=-1, keepdim=True) < 0.0) & valid)
         # Here, keepdim=True indiciates that valid has last dim 1 as well
         assert pre_res.shape[-1] == 1
@@ -317,20 +296,14 @@ def test_conditions(input, output, C_mat, rhs_mat, cond_mat, same_number_const, 
         # shape that cooperates.
         assert len( pre_res.shape ) == 4 
 
-        print("Shape of pre_res: ", pre_res.shape)
-
         res = pre_res.any(dim=-1).any(dim=-1).any(dim=-1)    
 
         # Extract input where prop holds
         if res.any():
             idx = torch.nonzero( pre_res )[0][:3]
-            print("idx:", idx)
-            print("Shape of input in branch", input.shape )
-            #print("Input", input)
             #Mimicing broadcasting to extend input shape by 1's
             input_expanded = input.expand(*pre_res.shape[:-1], -1)
             cex_hopefully = input_expanded[ idx[0], idx[1], idx[2], : ]
-            print( "====CEX====", cex_hopefully )
             dump_counterexample.dump_cex_to_file( 'cex.txt', cex_hopefully )
         
     else:
@@ -445,7 +418,6 @@ def gen_adv_example(model_ori, x, best_deltas, data_max, data_min, C_mat, rhs_ma
     print("PGD attack margin (first 2 examles and 10 specs):\n", attack_margin[:2, :, :10])
     print("number of violation: ", (attack_margin < 0).sum().item())
     # print the first 10 specifications for the first 2 examples 
-    print("attack_image, attack_output, attack_margin",attack_image, attack_output, attack_margin)
 
     return attack_image, attack_output, attack_margin
 
