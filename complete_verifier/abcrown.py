@@ -533,6 +533,14 @@ def main():
             else:
                 attack_images = attack_margins = all_adv_candidates = None
 
+            
+            if arguments.Config["exit_status"]["exit_cond"] == True:
+                if verified_status == "unsafe-pgd":
+                    np.save("adversarial_cex",attack_images.detach().view(attack_images.shape[0], -1).numpy())
+                    print("attack_images", attack_images.shape)
+                if all_adv_candidates is not None:
+                    np.save("potential_adversarial_cex.npy", all_adv_candidates.detach().view(all_adv_candidates.shape[0], -1).numpy())
+                exit(0)
             init_global_lb = saved_bounds = saved_slopes = y = lower_bounds = upper_bounds = None
             activation_opt_params = model_incomplete = lA = cplex_processes = None
 

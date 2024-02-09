@@ -513,6 +513,10 @@ class ConfigHandler:
         h = ["debug"]
         self.add_argument("--lp_test", type=str, default=None, choices=["MIP", "LP", None],
                           help='Debugging option. Do not use.', hierarchy=h + ['lp_test'], private=True)
+        
+        h = ["exit_status"]
+        self.add_argument("--exit_cond", type=str, default=None, choices=[True, False],
+                          help='Exit Cond if code called from main_accuracy.', hierarchy=h + ['exit_cond'])
 
     def add_argument(self, *args, **kwargs):
         """Add a single parameter to the parser. We will check the 'hierarchy' specified and then pass the remaining arguments to argparse."""
