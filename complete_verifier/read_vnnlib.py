@@ -182,7 +182,7 @@ def read_vnnlib(vnnlib_filename, regression=False):
             try:
                 with open(compiled_vnnlib_filename, "rb") as extf:
                     final_rv, old_file_md5 = pickle.load(extf)
-            except (pickle.PickleError, ValueError, EOFError):
+            except (pickle.PickleError, ValueError, EOFError, ModuleNotFoundError):
                 print("Cannot read compiled vnnlib file. Regenerating...")
                 read_error = True
 
